@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تحدي صلاتنا - تسجيل الدخول</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0E6E5C; --primary-dark:#0A4A3D; --gold:#D4A94A;
+  --bg:#F7F8F5; --card:#FFFFFF; --text:#1B2B27; --sub:#6B7A75; --border:#E6E9E6;
+  --success:#2E9E5B; --danger:#D9534F;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1613; --card:#1E2A25; --text:#F2F5F3; --sub:#A7B5AF; --border:#2A3A34;
+  }
+}
+:root[data-theme="dark"]{ --bg:#0F1613; --card:#1E2A25; --text:#F2F5F3; --sub:#A7B5AF; --border:#2A3A34; }
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min-height:100%}
+#app{max-width:520px;margin:0 auto;padding:16px 16px 90px;min-height:100vh}
+h1,h2,h3{margin:0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:22px;padding:20px;margin-bottom:16px}
+.hero .pts{font-size:28px;font-weight:700;margin:6px 0}
+.row{display:flex;align-items:center;justify-content:space-between}
+.muted{color:var(--sub);font-size:13px}
+button{font-family:inherit;border:none;border-radius:14px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff;width:100%}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-done{background:rgba(46,158,91,.15);color:var(--success)}
+.icon-btn{background:none;border:none;padding:4px;font-size:16px;color:var(--sub)}
+.prayer-card{display:flex;align-items:center;gap:12px;padding:14px}
+.prayer-emoji{font-size:26px}
+.prayer-name{font-weight:700}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
+  display:flex;padding-bottom:env(safe-area-inset-bottom,0px);max-width:520px;margin:0 auto; z-index:100}
+.tab{flex:1;text-align:center;padding:10px 4px;background:none;border-radius:0;font-weight:500;color:var(--sub)}
+.tab.active{color:var(--primary);font-weight:700}
+.medal{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(212,169,74,.15);font-size:15px;flex-shrink:0}
+.lb-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.lb-row:last-child{border-bottom:none}
+.avatar-emoji{width:38px;height:38px;border-radius:50%;background:rgba(14,110,92,.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.badge{opacity:.35;display:flex;gap:12px;align-items:center;padding:12px}
+.badge.earned{opacity:1}
+.badge .icon{font-size:26px}
+.empty{text-align:center;padding:40px 16px;color:var(--sub)}
+.toast{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;transform:translateX(-50%);
+  background:var(--primary-dark);color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;z-index:50;
+  opacity:0;transition:opacity .25s}
+.toast.show{opacity:1}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;margin-bottom:14px;font-size:15px;text-align:center}
+.avatar-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px}
+.avatar-pick{width:52px;height:52px;border-radius:50%;border:2px solid var(--border);background:var(--card);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.avatar-pick.selected{border-color:var(--primary);background:rgba(14,110,92,.12)}
+.auth-container{padding-top:20px;text-align:center}
+.link-btn{background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700;margin-top:10px;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"><div class="empty">جارٍ التحميل...</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const PRAYERS = [
+  {code:'fajr',   name:'الفجر',   points:3, emoji:'🌅'},
+  {code:'dhuhr',  name:'الظهر',   points:1, emoji:'☀️'},
+  {code:'jumuah', name:'الجمعة',  points:2, emoji:'🕌'},
+  {code:'asr',    name:'العصر',   points:1, emoji:'🌤️'},
+  {code:'maghrib',name:'المغرب',  points:1, emoji:'🌇'},
+  {code:'isha',   name:'العشاء',  points:1, emoji:'🌙'},
+];
+const ACHIEVEMENTS = [
+  {code:'streak7',  icon:'🔥', name:'أسبوع من الاستمرار', test:s=>s.bestStreak>=7},
+  {code:'fajr7',    icon:'🌅', name:'بطل الفجر',          test:s=>s.fajrStreak>=7},
+  {code:'pts50',    icon:'⭐', name:'50 نقطة',             test:s=>s.totalPoints>=50},
+  {code:'pts100',   icon:'⭐', name:'100 نقطة',            test:s=>s.totalPoints>=100},
+  {code:'fullweek', icon:'🕌', name:'أسبوع كامل',          test:s=>s.fullDays>=7},
+];
+const AVATAR_OPTIONS = ['🧕','👳','👨','👩','🧑','👴','👵','🧑‍🦱','🧑‍🦳','👦','👧'];
+
+let currentUser = null, currentAuthMode = 'login', tab = 'home';
+let challenge = null, myLogs = {}, myStats = null, leaderboard = [];
+let profile = null, pickedAvatar = AVATAR_OPTIONS[0];
+
+function dkey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function requiredForDate(d){
+  const fri = d.getDay()===5;
+  return PRAYERS.filter(p => p.code==='dhuhr' ? !fri : p.code==='jumuah' ? fri : true);
+}
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function computeStats(logs, startStr, endStr){
+  const start=new Date(startStr+'T00:00:00');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const end=new Date(Math.min(new Date(endStr+'T00:00:00').getTime(), today.getTime()));
+  let totalPoints=0, completedPrayers=0, requiredTotal=0, fullDays=0, running=0, bestStreak=0, curStreak=0;
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const req=requiredForDate(d); requiredTotal+=req.length; let dayDone=0;
+    for(const p of req){ if(logs[dkey(d)+':'+p.code]!=null){ totalPoints+=p.points; completedPrayers++; dayDone++; } }
+    if(dayDone===req.length){ fullDays++; running++; bestStreak=Math.max(bestStreak,running); } else running=0;
+  }
+  curStreak=running;
+  let fajrRunning=0, d2=new Date(end);
+  while(d2>=start && logs[dkey(d2)+':fajr']!=null){ fajrRunning++; d2.setDate(d2.getDate()-1); }
+  const completionRate = requiredTotal? Math.round((completedPrayers/requiredTotal)*100):0;
+  return {totalPoints, completedPrayers, completionRate, currentStreak:curStreak, bestStreak, fullDays, fajrStreak:fajrRunning};
+}
+
+// محاكاة قاعدة بيانات محلية آمنة ومستقلة لكل مستخدم (Real Local Database Storage)
+const Database = {
+  getUsers(){ return JSON.parse(localStorage.getItem('salat_users') || '{}'); },
+  saveUsers(users){ localStorage.setItem('salat_users', JSON.stringify(users)); },
+  getStats(){ return JSON.parse(localStorage.getItem('salat_stats') || '{}'); },
+  saveStats(stats){ localStorage.setItem('salat_stats', JSON.stringify(stats)); },
+  getChallenge(){
+    let ch = JSON.parse(localStorage.getItem('salat_challenge') || 'null');
+    if(!ch){
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+      const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      ch = { name: `تحدي ${months[now.getMonth()]} ${now.getFullYear()}`, start: dkey(start), end: dkey(end), status: 'active' };
+      localStorage.setItem('salat_challenge', JSON.stringify(ch));
+    }
+    return ch;
+  }
+};
+
+function handleAuth(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value.trim();
+  if(!email || !pass){ toast('الرجاء إدخال البريد وكلمة المرور'); return; }
+
+  let users = Database.getUsers();
+  if(currentAuthMode === 'register'){
+    if(users[email]){ toast('هذا البريد مستخدم مسبقاً، سجل دخولك'); return; }
+    users[email] = { password: pass, displayName: email.split('@')[0], avatarEmoji: AVATAR_OPTIONS[0], logs: {} };
+    Database.saveUsers(users);
+    toast('تم إنشاء الحساب بنجاح! أكمل بياناتك');
+  } else {
+    if(!users[email] || users[email].password !== pass){ toast('خطأ في البريد أو كلمة المرور'); return; }
+  }
+
+  currentUser = email;
+  profile = users[email];
+  myLogs = profile.logs || {};
+  if(!profile.setupDone){ tab = 'onboarding'; } else { tab = 'home'; }
+  loadAppData();
+}
+
+function saveOnboardingProfile(){
+  const nameInput = document.getElementById('nameInput');
+  const name = (nameInput.value || '').trim();
+  if(!name){ toast('اكتب اسمك أولًا'); return; }
+  
+  profile.displayName = name;
+  profile.avatarEmoji = pickedAvatar;
+  profile.setupDone = true;
+  
+  let users = Database.getUsers();
+  users[currentUser] = profile;
+  Database.saveUsers(users);
+  
+  loadAppData();
+}
+
+async function loadAppData(){
+  challenge = Database.getChallenge();
+  if(challenge){
+    myStats = computeStats(myLogs, challenge.start, challenge.end);
+    let allStats = Database.getStats();
+    allStats[currentUser] = {
+      name: profile.displayName,
+      avatar: profile.avatarEmoji,
+      ...myStats,
+      updatedAt: new Date().toISOString()
+    };
+    Database.saveStats(allStats);
+  }
+
+  let allStats = Database.getStats();
+  let arr = Object.keys(allStats).map(id => ({ id, ...allStats[id] }));
+  arr.sort((a,b) => b.totalPoints - a.totalPoints);
+  leaderboard = arr.map((item, index) => ({ rank: index + 1, ...item }));
+  render();
+}
+
+async function logPrayer(p){
+  const key = dkey(new Date())+':'+p.code;
+  if(myLogs[key]!=null){ toast('تم تسجيل هذه الصلاة مسبقًا ✅'); return; }
+  myLogs[key] = p.points;
+  profile.logs = myLogs;
+
+  let users = Database.getUsers();
+  users[currentUser] = profile;
+  Database.saveUsers(users);
+
+  toast(`⭐ +${p.points}   ما شاء الله ❤️`);
+  loadAppData();
+}
+
+function logout(){
+  currentUser = null;
+  profile = null;
+  myLogs = {};
+  render();
+}
+
+// واجهات العرض
+function renderAuth(){
+  return `
+    <div class="auth-container">
+      <div style="font-size:54px; margin-bottom:10px">🕌</div>
+      <h2>تحدي صلاتنا</h2>
+      <p class="muted">${currentAuthMode === 'login' ? 'سجل دخولك لمتابعة صلواتك ونقاطك' : 'أنشئ حساباً جديداً وابدأ التحدي'}</p>
+      <input id="authEmail" type="email" placeholder="البريد الإلكتروني">
+      <input id="authPass" type="password" placeholder="كلمة المرور">
+      <button class="btn-primary" onclick="handleAuth()">${currentAuthMode === 'login' ? 'دخول' : 'تسجيل حساب جديد'}</button>
+      <button class="link-btn" onclick="toggleAuthMode()">
+        ${currentAuthMode === 'login' ? 'ليس لديك حساب؟ أنشئ حساباً جديداً' : 'لديك حساب بالفعل؟ سجل دخولك'}
+      </button>
+    </div>`;
+}
+
+function toggleAuthMode(){
+  currentAuthMode = currentAuthMode === 'login' ? 'register' : 'login';
+  render();
+}
+
+function renderOnboarding(){
+  return `
+    <div style="padding-top:20px;text-align:center">
+      <div style="font-size:48px">👤</div>
+      <h2>إعداد الملف الشخصي</h2>
+      <p class="muted">اختر اسمك ورمزك التعريفي لتظهر في قائمة العائلة</p>
+      <input id="nameInput" placeholder="اكتب اسمك هنا" value="${profile.displayName || ''}">
+      <div class="avatar-grid">
+        ${AVATAR_OPTIONS.map(a=>`<div class="avatar-pick ${a===pickedAvatar?'selected':''}" onclick="selectAvatar('${a}')">${a}</div>`).join('')}
+      </div>
+      <button class="btn-primary" onclick="saveOnboardingProfile()">حفظ والبدء</button>
+    </div>`;
+}
+function selectAvatar(a){ pickedAvatar=a; render(); }
+
+function renderHome(){
+  const today = new Date();
+  const req = requiredForDate(today);
+  const remaining = req.filter(p => myLogs[dkey(today)+':'+p.code] == null).length;
+  const myEntry = leaderboard.find(l => l.id === currentUser);
+
+  return `
+    <div class="row">
+      <h2>مرحبًا، ${profile.displayName} 👋</h2>
+      <button class="btn-outline" style="padding:6px 10px;font-size:12px" onclick="logout()">خروج</button>
+    </div>
+    <p class="muted">${challenge.name}</p>
+    <div class="hero">
+      <div>⭐</div>
+      <div class="pts">${myStats.totalPoints} نقطة</div>
+      <div class="row">
+        <span>${myEntry ? 'المركز '+myEntry.rank : ''}</span>
+        <span>🔥 ${myStats.currentStreak} أيام متتالية</span>
+      </div>
+    </div>
+    <div class="row"><h3>صلوات اليوم</h3><span class="muted">${remaining>0 ? (remaining===1?'باقي صلاة واحدة لإكمال يومك ❤️':`${remaining} صلوات متبقية`) : 'ما شاء الله، أكملت يومًا آخر!'}</span></div>
+    ${req.map(p=>{
+      const done = myLogs[dkey(today)+':'+p.code]!=null;
+      return `<div class="card prayer-card">
+        <span class="prayer-emoji">${p.emoji}</span>
+        <div style="flex:1"><div class="prayer-name">${p.name}</div><div class="muted">+${p.points}${p.points===1?'نقطة':'نقاط'}</div></div>
+        ${done ? `<span class="btn-done" style="padding:10px 14px;border-radius:12px">✅ تم التسجيل</span>`
+               : `<button class="btn-primary" style="width:auto" onclick='logPrayer(${JSON.stringify(p)})'>تسجيل الصلاة</button>`}
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function renderLeaderboard(){
+  if(!leaderboard.length) return `<div class="empty">لا يوجد مشاركون حتى الآن ❤️</div>`;
+  return `<h2>🏆 لوحة الترتيب</h2><div class="card">${leaderboard.map(e=>`
+    <div class="lb-row">
+      <span class="medal">${e.rank===1?'🥇':e.rank===2?'🥈':e.rank===3?'🥉':e.rank}</span>
+      <span class="avatar-emoji">${e.avatar||'🙂'}</span>
+      <div style="flex:1"><b>${e.name}${e.id===currentUser?' (أنت)':''}</b><div class="muted">التزام ${e.completionRate||0}%</div></div>
+      <b>${e.totalPoints||0}</b>
+    </div>`).join('')}</div>`;
+}
+
+function renderAchievements(){
+  const s = myStats || {totalPoints:0,bestStreak:0,fajrStreak:0,fullDays:0};
+  return `<h2>🏅 إنجازاتي</h2>` + ACHIEVEMENTS.map(a=>{
+    const earned = a.test(s);
+    return `<div class="card badge ${earned?'earned':''}"><span class="icon">${a.icon}</span><div>${a.name}</div></div>`;
+  }).join('');
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!currentUser){ app.innerHTML = renderAuth(); return; }
+  if(tab === 'onboarding'){ app.innerHTML = renderOnboarding(); return; }
+
+  let body = tab === 'home' ? renderHome() : tab === 'leaderboard' ? renderLeaderboard() : renderAchievements();
+  app.innerHTML = `
+    ${body}
+    <div class="tabs">
+      <button class="tab ${tab==='home'?'active':''}" onclick="setTab('home')">🏠 الرئيسية</button>
+      <button class="tab ${tab==='leaderboard'?'active':''}" onclick="setTab('leaderboard')">🏆 الترتيب</button>
+      <button class="tab ${tab==='achievements'?'active':''}" onclick="setTab('achievements')">🏅 الإنجازات</button>
+    </div>`;
+}
+
+function setTab(t){ tab = t; render(); }
+
+// التشغيل التلقائي
+render();
+</script>
+</body>
+</html>
